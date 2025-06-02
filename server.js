@@ -2,7 +2,7 @@ import axios from "axios";
 
 const CLIENT_ID = "1378901870940258464";
 const CLIENT_SECRET = "SubIMkYeG1z1jq6QMgaqHVTd1SD-J2Ze";
-const REDIRECT_URI = "https://realmaybecool.github.io/falconwebiste/";
+const REDIRECT_URI = "https://falconwebiste-5jsot25rg-realmaybecools-projects.vercel.app/"; // <-- update this
 const GUILD_ID = "1378399333929713796";
 const PREMIUM_ROLE_ID = "1378900467668488222";
 

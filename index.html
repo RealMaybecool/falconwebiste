@@ -214,6 +214,74 @@
     .script-link-btn:hover {
       background: #4752c4;
     }
+
+    /* FAQ and Feedback Modals */
+    .modal-content {
+      background: #222;
+      padding: 2rem;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 90%;
+      position: relative;
+    }
+    #closeFaqModal, #closeFeedbackModal {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    #faqModal, #feedbackModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 3000;
+      justify-content: center;
+      align-items: center;
+    }
+    #feedbackText {
+      width: 100%;
+      border-radius: 8px;
+      padding: 0.5rem;
+      border: 1px solid #5865F2;
+      background: #333;
+      color: #fff;
+      resize: none;
+    }
+    #sendFeedbackBtn {
+      margin-top: 1rem;
+      background: #5865F2;
+      color: #fff;
+      border: none;
+      padding: 0.7rem 1.5rem;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #sendFeedbackBtn:hover {
+      background: #4752c4;
+    }
+
+    /* Toast notification */
+    #toast {
+      display: none;
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      z-index: 4000;
+      background: #222;
+      color: #fff;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      font-size: 1.1rem;
+    }
   </style>
 </head>
 <body>
@@ -233,6 +301,9 @@
   <div class="options" id="options" style="display:none;">
     <button class="option-btn" id="executorBtn">Executor</button>
     <button class="option-btn" id="scriptsBtn">Scripts</button>
+    <button class="option-btn" id="faqBtn">FAQ</button>
+    <button class="option-btn" id="feedbackBtn">Feedback</button>
+    <button class="option-btn" id="themeBtn">Toggle Theme</button>
   </div>
 
   <!-- Scripts Modal -->
@@ -248,14 +319,38 @@
     </div>
   </div>
 
+  <!-- FAQ Modal -->
+  <div id="faqModal">
+    <div class="modal-content">
+      <button id="closeFaqModal">&times;</button>
+      <h2>Frequently Asked Questions</h2>
+      <ul style="text-align:left;">
+        <li><strong>How do I use the scripts?</strong> <br>Click "Scripts", pick your game, and select your platform.</li>
+        <li><strong>How do I get Premium?</strong> <br>Join our Discord and get the Premium role.</li>
+        <li><strong>Who do I contact for support?</strong> <br>Use the Feedback button or ask in our Discord server.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div id="feedbackModal">
+    <div class="modal-content">
+      <button id="closeFeedbackModal">&times;</button>
+      <h2>Send Feedback</h2>
+      <textarea id="feedbackText" rows="4"></textarea>
+      <button id="sendFeedbackBtn">Send</button>
+      <div id="feedbackMsg" style="margin-top:1rem;"></div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast"></div>
+
   <script>
-    // Replace with your actual values
     const CLIENT_ID = "1378901870940258464";
     const REDIRECT_URI = "https://realmaybecool.github.io/falconwebiste/";
     const OAUTH_SCOPE = "identify guilds";
 
-    // Simulate backend API endpoint for demonstration
-    // In production, replace this with your real backend endpoint
     async function fetchProfile(code) {
       // Simulated response for demonstration
       // Replace this with a real fetch to your backend
@@ -263,7 +358,7 @@
       return {
         username: "User",
         avatar: "https://cdn.discordapp.com/avatars/USER_ID/AVATAR_HASH.png",
-        premium: true, // true if user has role 1378900467668488222
+        premium: true,
         id: "USER_ID"
       };
     }
@@ -274,7 +369,6 @@
       window.location.href = authURL;
     };
 
-    // Handle OAuth2 code in URL
     window.addEventListener("DOMContentLoaded", async () => {
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
@@ -290,11 +384,104 @@
       }
     });
 
+    // Theme toggle
+    let darkTheme = true;
+    document.getElementById("themeBtn").onclick = () => {
+      darkTheme = !darkTheme;
+      document.body.style.background = darkTheme
+        ? "linear-gradient(135deg, #111, #555)"
+        : "linear-gradient(135deg, #fff, #e0e0e0)";
+      document.body.style.color = darkTheme ? "#fff" : "#222";
+      showToast(darkTheme ? "Dark theme enabled" : "Light theme enabled");
+    };
+
+    // FAQ Modal
+    const faqBtn = document.getElementById("faqBtn");
+    const faqModal = document.getElementById("faqModal");
+    const closeFaqModal = document.getElementById("closeFaqModal");
+    faqBtn.onclick = () => { faqModal.style.display = "flex"; };
+    closeFaqModal.onclick = () => { faqModal.style.display = "none"; };
+    faqModal.addEventListener("click", (e) => {
+      if (e.target === faqModal) faqModal.style.display = "none";
+    });
+
+    // Feedback Modal
+    const feedbackBtn = document.getElementById("feedbackBtn");
+    const feedbackModal = document.getElementById("feedbackModal");
+    const closeFeedbackModal = document.getElementById("closeFeedbackModal");
+    const sendFeedbackBtn = document.getElementById("sendFeedbackBtn");
+    const feedbackText = document.getElementById("feedbackText");
+    const feedbackMsg = document.getElementById("feedbackMsg");
+    feedbackBtn.onclick = () => { feedbackModal.style.display = "flex"; feedbackMsg.textContent = ""; feedbackText.value = ""; };
+    closeFeedbackModal.onclick = () => { feedbackModal.style.display = "none"; };
+    feedbackModal.addEventListener("click", (e) => {
+      if (e.target === feedbackModal) feedbackModal.style.display = "none";
+    });
+    sendFeedbackBtn.onclick = () => {
+      if (feedbackText.value.trim().length < 5) {
+        feedbackMsg.textContent = "Please enter more details!";
+        feedbackMsg.style.color = "#ffd700";
+        return;
+      }
+      feedbackMsg.textContent = "Thank you for your feedback!";
+      feedbackMsg.style.color = "#00ff99";
+      setTimeout(() => { feedbackModal.style.display = "none"; }, 1200);
+      showToast("Feedback sent!");
+    };
+
+    // Toast notification
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 2000);
+    }
+
     function showProfile(profile) {
       const profileContainer = document.getElementById("profileContainer");
       const profileAvatar = document.getElementById("profileAvatar");
       const profileDropdown = document.getElementById("profileDropdown");
       const options = document.getElementById("options");
+
+      // Add extra UI
+      let extraUI = document.getElementById("extraUI");
+      if (!extraUI) {
+        extraUI = document.createElement("div");
+        extraUI.id = "extraUI";
+        extraUI.style.marginTop = "2rem";
+        extraUI.innerHTML = `
+          <div style="background:#222;padding:1.5rem 1rem;border-radius:16px;max-width:500px;margin:auto;">
+            <h2>Welcome, <span style="color:#ffd700">${profile.username}</span>!</h2>
+            <p>Status: <span style="color:${profile.premium ? '#ffd700' : '#5865F2'};font-weight:bold;">
+              ${profile.premium ? "Premium" : "Not Premium"}
+            </span></p>
+            <div style="margin:1rem 0;">
+              <span style="display:inline-block;width:48px;height:48px;border-radius:50%;background:#333;vertical-align:middle;overflow:hidden;">
+                <img src="${profile.avatar}" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">
+              </span>
+              <span style="margin-left:1rem;font-size:1.2rem;">ID: <span style="color:#ccc">${profile.id}</span></span>
+            </div>
+            <button id="logoutBtn" style="margin-top:1rem;background:#5865F2;color:#fff;border:none;padding:0.7rem 1.5rem;border-radius:10px;cursor:pointer;">Logout</button>
+            <div style="margin-top:1rem;">
+              <h3>Quick Actions</h3>
+              <button onclick="window.open('https://discord.gg/yourserver','_blank')" style="margin:0.5rem;background:#5865F2;color:#fff;border:none;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;">Join Discord</button>
+              <button onclick="showToast('Copied invite!')" style="margin:0.5rem;background:#333;color:#fff;border:none;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;">Copy Invite</button>
+            </div>
+            <div style="margin-top:1rem;">
+              <h3>Account Stats</h3>
+              <ul style="text-align:left;max-width:300px;margin:auto;">
+                <li>Scripts Used: <span style="color:#ffd700">0</span></li>
+                <li>Executors Downloaded: <span style="color:#ffd700">0</span></li>
+                <li>Feedback Sent: <span style="color:#ffd700">0</span></li>
+              </ul>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(extraUI);
+        document.getElementById("logoutBtn").onclick = () => {
+          window.location.href = window.location.pathname;
+        };
+      }
 
       profileAvatar.src = profile.avatar;
       profileAvatar.alt = profile.username + " avatar";
@@ -314,7 +501,6 @@
         dropdownVisible = !dropdownVisible;
         profileDropdown.style.display = dropdownVisible ? "block" : "none";
       };
-      // Hide dropdown when clicking outside
       document.addEventListener("click", (e) => {
         if (!profileContainer.contains(e.target)) {
           profileDropdown.style.display = "none";
@@ -323,34 +509,35 @@
       });
     }
 
-    // Executor and Scripts logic
     document.getElementById("executorBtn").onclick = () => {
       window.location.href = "https://your-executor-download-link.com";
     };
 
-    // Scripts Modal Logic
     const scriptsBtn = document.getElementById("scriptsBtn");
     const scriptsModal = document.getElementById("scriptsModal");
     const closeScriptsModal = document.getElementById("closeScriptsModal");
     const tabContent = document.getElementById("tabContent");
     const tabBtns = document.querySelectorAll(".tab-btn");
 
-    // Script links for each tab
     const tabData = {
       garden: [
         {
-          label: "Grow A Garden Script",
-          url: "https://your-garden-script-link.com"
+          label: "Grow A Garden For PC Script",
+          url: "https://lootdest.org/s?XkcqWoHs"
+        },
+        {
+          label: "Grow A Garden For Mobile Script",
+          url: "https://lootdest.org/s?Nz55AdJI"
         }
       ],
       rivals: [
         {
           label: "Rivals for PC",
-          url: "https://api.luarmor.net/files/v3/loaders/7b4027007fc7914a366c177ec0d309a2.lua"
+          url: "https://loot-link.com/s?m742zK6A"
         },
         {
           label: "Rivals for Mobile",
-          url: "https://api.luarmor.net/files/v3/loaders/7b4027007fc7914a366c177ec0d309a2.lua"
+          url: "https://loot-link.com/s?qLTJAwZP"
         }
       ],
       mm2: [
@@ -380,7 +567,6 @@
           btn.classList.remove("active");
         }
       });
-      // Render buttons for each script
       tabContent.innerHTML = "";
       (tabData[tab] || []).forEach(script => {
         const btn = document.createElement("button");
@@ -396,7 +582,6 @@
       }
     }
 
-    // Optional: Close modal when clicking outside modal content
     scriptsModal.addEventListener("click", (e) => {
       if (e.target === scriptsModal) scriptsModal.style.display = "none";
     });

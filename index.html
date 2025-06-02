@@ -545,218 +545,219 @@
   const CLIENT_ID = "1378901870940258464";
   const REDIRECT_URI = "https://realmaybecool.github.io/falconwebiste/";
   const OAUTH_SCOPE = "identify guilds";
-  const BACKEND_URL = "https://boggy-fork-railway.glitch.me"; // <-- Use your Glitch backend URL
+  // Updated BACKEND_URL to your Vercel deployment:
+  const BACKEND_URL = "https://falconwebiste-5jsot25rg-realmaybecools-projects.vercel.app";
 
-    // Discord OAuth login
-    document.getElementById("loginBtn").onclick = (e) => {
-      e.preventDefault();
-      const authURL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(OAUTH_SCOPE)}`;
-      window.location.href = authURL;
+  // Discord OAuth login
+  document.getElementById("loginBtn").onclick = (e) => {
+    e.preventDefault();
+    const authURL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(OAUTH_SCOPE)}`;
+    window.location.href = authURL;
+  };
+
+  // On page load, check for Discord code and fetch profile
+  window.addEventListener("DOMContentLoaded", async () => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (code) {
+      document.getElementById("mainContainer").style.display = "none";
+      try {
+        const profile = await fetchProfile(code);
+        showProfile(profile);
+      } catch (err) {
+        alert("Failed to load profile.");
+        document.getElementById("mainContainer").style.display = "";
+      }
+    }
+  });
+
+  // Fetch profile from backend
+  async function fetchProfile(code) {
+    const res = await fetch(`${BACKEND_URL}/api/discord/callback?code=${encodeURIComponent(code)}`);
+    if (!res.ok) throw new Error("Failed to fetch profile");
+    return await res.json();
+  }
+
+  // Show profile avatar and dropdown in top right
+  function showProfile(profile) {
+    const profileContainer = document.getElementById("profileContainer");
+    const profileAvatar = document.getElementById("profileAvatar");
+    const profileDropdown = document.getElementById("profileDropdown");
+    const options = document.getElementById("options");
+
+    profileAvatar.src = profile.avatar;
+    profileAvatar.alt = profile.username + " avatar";
+    profileDropdown.innerHTML = `
+      <strong>${profile.username}</strong>
+      <div class="status">
+        Status: <span style="color:${profile.premium ? '#ffd700' : '#5865F2'};font-weight:bold;">
+          ${profile.premium ? "Premium" : "Not Premium"}
+        </span>
+      </div>
+      <div style="margin-bottom:1rem;">
+        <span style="font-size:0.98rem;color:#bfc4e0;">ID: ${profile.id}</span>
+      </div>
+      <button id="logoutBtn" style="background:#5865F2;color:#fff;border:none;padding:0.7rem 1.5rem;border-radius:10px;cursor:pointer;font-weight:600;font-size:1.08rem;width:100%;">Logout</button>
+    `;
+    profileDropdown.className = "profile-dropdown " + (profile.premium ? "premium" : "not-premium");
+    profileContainer.style.display = "flex";
+    options.style.display = "flex";
+
+    // Dropdown toggle
+    let dropdownVisible = false;
+    profileAvatar.onclick = () => {
+      dropdownVisible = !dropdownVisible;
+      profileDropdown.style.display = dropdownVisible ? "block" : "none";
     };
-
-    // On page load, check for Discord code and fetch profile
-    window.addEventListener("DOMContentLoaded", async () => {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
-      if (code) {
-        document.getElementById("mainContainer").style.display = "none";
-        try {
-          const profile = await fetchProfile(code);
-          showProfile(profile);
-        } catch (err) {
-          alert("Failed to load profile.");
-          document.getElementById("mainContainer").style.display = "";
-        }
+    document.addEventListener("click", (e) => {
+      if (!profileContainer.contains(e.target)) {
+        profileDropdown.style.display = "none";
+        dropdownVisible = false;
       }
     });
 
-    // Fetch profile from backend
-    async function fetchProfile(code) {
-      const res = await fetch(`${BACKEND_URL}/api/discord/callback?code=${encodeURIComponent(code)}`);
-      if (!res.ok) throw new Error("Failed to fetch profile");
-      return await res.json();
-    }
-
-    // Show profile avatar and dropdown in top right
-    function showProfile(profile) {
-      const profileContainer = document.getElementById("profileContainer");
-      const profileAvatar = document.getElementById("profileAvatar");
-      const profileDropdown = document.getElementById("profileDropdown");
-      const options = document.getElementById("options");
-
-      profileAvatar.src = profile.avatar;
-      profileAvatar.alt = profile.username + " avatar";
-      profileDropdown.innerHTML = `
-        <strong>${profile.username}</strong>
-        <div class="status">
-          Status: <span style="color:${profile.premium ? '#ffd700' : '#5865F2'};font-weight:bold;">
-            ${profile.premium ? "Premium" : "Not Premium"}
-          </span>
-        </div>
-        <div style="margin-bottom:1rem;">
-          <span style="font-size:0.98rem;color:#bfc4e0;">ID: ${profile.id}</span>
-        </div>
-        <button id="logoutBtn" style="background:#5865F2;color:#fff;border:none;padding:0.7rem 1.5rem;border-radius:10px;cursor:pointer;font-weight:600;font-size:1.08rem;width:100%;">Logout</button>
-      `;
-      profileDropdown.className = "profile-dropdown " + (profile.premium ? "premium" : "not-premium");
-      profileContainer.style.display = "flex";
-      options.style.display = "flex";
-
-      // Dropdown toggle
-      let dropdownVisible = false;
-      profileAvatar.onclick = () => {
-        dropdownVisible = !dropdownVisible;
-        profileDropdown.style.display = dropdownVisible ? "block" : "none";
-      };
-      document.addEventListener("click", (e) => {
-        if (!profileContainer.contains(e.target)) {
-          profileDropdown.style.display = "none";
-          dropdownVisible = false;
-        }
-      });
-
-      // Logout
-      setTimeout(() => {
-        const logoutBtn = document.getElementById("logoutBtn");
-        if (logoutBtn) {
-          logoutBtn.onclick = () => {
-            window.location.href = window.location.pathname;
-          };
-        }
-      }, 100);
-    }
-
-    // Theme toggle
-    let darkTheme = true;
-    document.getElementById("themeBtn").onclick = () => {
-      darkTheme = !darkTheme;
-      document.body.style.background = darkTheme
-        ? "linear-gradient(135deg, #181c24, #5865F2 120%)"
-        : "linear-gradient(135deg, #fff, #e0e0e0)";
-      document.body.style.color = darkTheme ? "#fff" : "#222";
-      showToast(darkTheme ? "Dark theme enabled" : "Light theme enabled");
-    };
-
-    // FAQ Modal
-    const faqBtn = document.getElementById("faqBtn");
-    const faqModal = document.getElementById("faqModal");
-    const closeFaqModal = document.getElementById("closeFaqModal");
-    faqBtn.onclick = () => { faqModal.style.display = "flex"; };
-    closeFaqModal.onclick = () => { faqModal.style.display = "none"; };
-    faqModal.addEventListener("click", (e) => {
-      if (e.target === faqModal) faqModal.style.display = "none";
-    });
-
-    // Feedback Modal
-    const feedbackBtn = document.getElementById("feedbackBtn");
-    const feedbackModal = document.getElementById("feedbackModal");
-    const closeFeedbackModal = document.getElementById("closeFeedbackModal");
-    const sendFeedbackBtn = document.getElementById("sendFeedbackBtn");
-    const feedbackText = document.getElementById("feedbackText");
-    const feedbackMsg = document.getElementById("feedbackMsg");
-    feedbackBtn.onclick = () => { feedbackModal.style.display = "flex"; feedbackMsg.textContent = ""; feedbackText.value = ""; };
-    closeFeedbackModal.onclick = () => { feedbackModal.style.display = "none"; };
-    feedbackModal.addEventListener("click", (e) => {
-      if (e.target === feedbackModal) feedbackModal.style.display = "none";
-    });
-    sendFeedbackBtn.onclick = () => {
-      if (feedbackText.value.trim().length < 5) {
-        feedbackMsg.textContent = "Please enter more details!";
-        feedbackMsg.style.color = "#ffd700";
-        return;
-      }
-      feedbackMsg.textContent = "Thank you for your feedback!";
-      feedbackMsg.style.color = "#00ff99";
-      setTimeout(() => { feedbackModal.style.display = "none"; }, 1200);
-      showToast("Feedback sent!");
-    };
-
-    // Toast notification
-    function showToast(msg) {
-      const toast = document.getElementById("toast");
-      toast.textContent = msg;
-      toast.style.display = "block";
-      toast.style.opacity = "1";
-      setTimeout(() => { toast.style.opacity = "0"; }, 1800);
-      setTimeout(() => { toast.style.display = "none"; }, 2200);
-    }
-
-    document.getElementById("executorBtn").onclick = () => {
-      window.location.href = "https://your-executor-download-link.com";
-    };
-
-    const scriptsBtn = document.getElementById("scriptsBtn");
-    const scriptsModal = document.getElementById("scriptsModal");
-    const closeScriptsModal = document.getElementById("closeScriptsModal");
-    const tabContent = document.getElementById("tabContent");
-    const tabBtns = document.querySelectorAll(".tab-btn");
-
-    const tabData = {
-      garden: [
-        {
-          label: "Grow A Garden For PC Script",
-          url: "https://lootdest.org/s?XkcqWoHs"
-        },
-        {
-          label: "Grow A Garden For Mobile Script",
-          url: "https://lootdest.org/s?Nz55AdJI"
-        }
-      ],
-      rivals: [
-        {
-          label: "Rivals for PC",
-          url: "https://loot-link.com/s?m742zK6A"
-        },
-        {
-          label: "Rivals for Mobile",
-          url: "https://loot-link.com/s?qLTJAwZP"
-        }
-      ],
-      mm2: [
-        {
-          label: "MM2 Script",
-          url: "https://your-mm2-script-link.com"
-        }
-      ]
-    };
-
-    scriptsBtn.onclick = () => {
-      scriptsModal.style.display = "flex";
-      setActiveTab("garden");
-    };
-    closeScriptsModal.onclick = () => {
-      scriptsModal.style.display = "none";
-    };
-    tabBtns.forEach(btn => {
-      btn.onclick = () => setActiveTab(btn.getAttribute("data-tab"));
-    });
-
-    function setActiveTab(tab) {
-      tabBtns.forEach(btn => {
-        if (btn.getAttribute("data-tab") === tab) {
-          btn.classList.add("active");
-        } else {
-          btn.classList.remove("active");
-        }
-      });
-      tabContent.innerHTML = "";
-      (tabData[tab] || []).forEach(script => {
-        const btn = document.createElement("button");
-        btn.className = "script-link-btn";
-        btn.textContent = script.label;
-        btn.onclick = () => {
-          window.location.href = script.url;
+    // Logout
+    setTimeout(() => {
+      const logoutBtn = document.getElementById("logoutBtn");
+      if (logoutBtn) {
+        logoutBtn.onclick = () => {
+          window.location.href = window.location.pathname;
         };
-        tabContent.appendChild(btn);
-      });
-      if ((tabData[tab] || []).length === 0) {
-        tabContent.textContent = "No script available.";
       }
-    }
+    }, 100);
+  }
 
-    scriptsModal.addEventListener("click", (e) => {
-      if (e.target === scriptsModal) scriptsModal.style.display = "none";
+  // Theme toggle
+  let darkTheme = true;
+  document.getElementById("themeBtn").onclick = () => {
+    darkTheme = !darkTheme;
+    document.body.style.background = darkTheme
+      ? "linear-gradient(135deg, #181c24, #5865F2 120%)"
+      : "linear-gradient(135deg, #fff, #e0e0e0)";
+    document.body.style.color = darkTheme ? "#fff" : "#222";
+    showToast(darkTheme ? "Dark theme enabled" : "Light theme enabled");
+  };
+
+  // FAQ Modal
+  const faqBtn = document.getElementById("faqBtn");
+  const faqModal = document.getElementById("faqModal");
+  const closeFaqModal = document.getElementById("closeFaqModal");
+  faqBtn.onclick = () => { faqModal.style.display = "flex"; };
+  closeFaqModal.onclick = () => { faqModal.style.display = "none"; };
+  faqModal.addEventListener("click", (e) => {
+    if (e.target === faqModal) faqModal.style.display = "none";
+  });
+
+  // Feedback Modal
+  const feedbackBtn = document.getElementById("feedbackBtn");
+  const feedbackModal = document.getElementById("feedbackModal");
+  const closeFeedbackModal = document.getElementById("closeFeedbackModal");
+  const sendFeedbackBtn = document.getElementById("sendFeedbackBtn");
+  const feedbackText = document.getElementById("feedbackText");
+  const feedbackMsg = document.getElementById("feedbackMsg");
+  feedbackBtn.onclick = () => { feedbackModal.style.display = "flex"; feedbackMsg.textContent = ""; feedbackText.value = ""; };
+  closeFeedbackModal.onclick = () => { feedbackModal.style.display = "none"; };
+  feedbackModal.addEventListener("click", (e) => {
+    if (e.target === feedbackModal) feedbackModal.style.display = "none";
+  });
+  sendFeedbackBtn.onclick = () => {
+    if (feedbackText.value.trim().length < 5) {
+      feedbackMsg.textContent = "Please enter more details!";
+      feedbackMsg.style.color = "#ffd700";
+      return;
+    }
+    feedbackMsg.textContent = "Thank you for your feedback!";
+    feedbackMsg.style.color = "#00ff99";
+    setTimeout(() => { feedbackModal.style.display = "none"; }, 1200);
+    showToast("Feedback sent!");
+  };
+
+  // Toast notification
+  function showToast(msg) {
+    const toast = document.getElementById("toast");
+    toast.textContent = msg;
+    toast.style.display = "block";
+    toast.style.opacity = "1";
+    setTimeout(() => { toast.style.opacity = "0"; }, 1800);
+    setTimeout(() => { toast.style.display = "none"; }, 2200);
+  }
+
+  document.getElementById("executorBtn").onclick = () => {
+    window.location.href = "https://your-executor-download-link.com";
+  };
+
+  const scriptsBtn = document.getElementById("scriptsBtn");
+  const scriptsModal = document.getElementById("scriptsModal");
+  const closeScriptsModal = document.getElementById("closeScriptsModal");
+  const tabContent = document.getElementById("tabContent");
+  const tabBtns = document.querySelectorAll(".tab-btn");
+
+  const tabData = {
+    garden: [
+      {
+        label: "Grow A Garden For PC Script",
+        url: "https://lootdest.org/s?XkcqWoHs"
+      },
+      {
+        label: "Grow A Garden For Mobile Script",
+        url: "https://lootdest.org/s?Nz55AdJI"
+      }
+    ],
+    rivals: [
+      {
+        label: "Rivals for PC",
+        url: "https://loot-link.com/s?m742zK6A"
+      },
+      {
+        label: "Rivals for Mobile",
+        url: "https://loot-link.com/s?qLTJAwZP"
+      }
+    ],
+    mm2: [
+      {
+        label: "MM2 Script",
+        url: "https://your-mm2-script-link.com"
+      }
+    ]
+  };
+
+  scriptsBtn.onclick = () => {
+    scriptsModal.style.display = "flex";
+    setActiveTab("garden");
+  };
+  closeScriptsModal.onclick = () => {
+    scriptsModal.style.display = "none";
+  };
+  tabBtns.forEach(btn => {
+    btn.onclick = () => setActiveTab(btn.getAttribute("data-tab"));
+  });
+
+  function setActiveTab(tab) {
+    tabBtns.forEach(btn => {
+      if (btn.getAttribute("data-tab") === tab) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
     });
+    tabContent.innerHTML = "";
+    (tabData[tab] || []).forEach(script => {
+      const btn = document.createElement("button");
+      btn.className = "script-link-btn";
+      btn.textContent = script.label;
+      btn.onclick = () => {
+        window.location.href = script.url;
+      };
+      tabContent.appendChild(btn);
+    });
+    if ((tabData[tab] || []).length === 0) {
+      tabContent.textContent = "No script available.";
+    }
+  }
+
+  scriptsModal.addEventListener("click", (e) => {
+    if (e.target === scriptsModal) scriptsModal.style.display = "none";
+  });
   </script>
 </body>
 </html>

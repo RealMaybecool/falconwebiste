@@ -11,6 +11,10 @@ const PREMIUM_ROLE_ID = "1378900467668488222";
 const app = express();
 app.use(cors());
 
+app.get("/", (req, res) => {
+  res.send("Falcon Website Backend is running!");
+});
+
 app.get("/api/discord/callback", async (req, res) => {
   const code = req.query.code;
   if (!code) return res.status(400).json({ error: "No code provided" });
@@ -25,6 +29,7 @@ app.get("/api/discord/callback", async (req, res) => {
         grant_type: "authorization_code",
         code,
         redirect_uri: REDIRECT_URI,
+        scope: "identify guilds",
       }),
       { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
     );
@@ -36,31 +41,38 @@ app.get("/api/discord/callback", async (req, res) => {
     });
     const user = userRes.data;
 
-    // Get member info in your guild
-    const memberRes = await axios.get(
-      `https://discord.com/api/users/@me/guilds/${GUILD_ID}/member`,
-      { headers: { Authorization: `Bearer ${access_token}` } }
-    );
-    const member = memberRes.data;
+    // Get guild member info to check premium role
+    let premium = false;
+    let avatarUrl = `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`;
+    try {
+      const memberRes = await axios.get(
+        `https://discord.com/api/users/@me/guilds/${GUILD_ID}/member`,
+        { headers: { Authorization: `Bearer ${access_token}` } }
+      );
+      const member = memberRes.data;
+      premium = member.roles && member.roles.includes(PREMIUM_ROLE_ID);
+    } catch (e) {
+      // Not a member or can't fetch roles
+      premium = false;
+    }
 
-    // Check for premium role
-    const hasPremium = (member.roles || []).includes(PREMIUM_ROLE_ID);
-
-    // Build avatar URL
-    let avatar = user.avatar
-      ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-      : "https://cdn.discordapp.com/embed/avatars/0.png";
+    // Custom avatar if set
+    if (user.avatar) {
+      avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`;
+    }
 
     res.json({
-      username: user.username,
-      avatar,
-      premium: hasPremium,
       id: user.id,
+      username: `${user.username}#${user.discriminator}`,
+      avatar: avatarUrl,
+      premium,
     });
   } catch (err) {
-    res.status(500).json({ error: "OAuth2 or Discord API error", details: err.toString() });
+    res.status(500).json({ error: "Failed to fetch profile" });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => console.log(`Backend running on http://0.0.0.0:${PORT}`));
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(`Backend running on http://0.0.0.0:${PORT}`)
+);

@@ -121,6 +121,99 @@
       display: block;
       margin-bottom: 0.5rem;
     }
+    .options {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .option-btn {
+      background: #222;
+      color: #fff;
+      border: 2px solid #5865F2;
+      border-radius: 10px;
+      padding: 0.7rem 1.5rem;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .option-btn:hover {
+      background: #5865F2;
+      color: #fff;
+    }
+    /* Modal styles */
+    #scriptsModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.7);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+    #scriptsModal .modal-content {
+      background: #222;
+      padding: 2rem;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 90%;
+      position: relative;
+    }
+    #closeScriptsModal {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .tab-btn {
+      flex: 1;
+      background: #333;
+      color: #ccc;
+      border: none;
+      padding: 0.5rem 0.2rem;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.2s, color 0.2s;
+    }
+    .tab-btn.active {
+      background: #5865F2;
+      color: #fff;
+    }
+    #tabContent {
+      background: #181818;
+      padding: 1rem;
+      border-radius: 0 0 8px 8px;
+      min-height: 100px;
+      color: #fff;
+      margin-top: -1px;
+      text-align: left;
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .script-link-btn {
+      display: block;
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 0.7rem 1rem;
+      background: #5865F2;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.2s;
+    }
+    .script-link-btn:hover {
+      background: #4752c4;
+    }
   </style>
 </head>
 <body>
@@ -137,11 +230,28 @@
       Sign in with Discord
     </a>
   </div>
+  <div class="options" id="options" style="display:none;">
+    <button class="option-btn" id="executorBtn">Executor</button>
+    <button class="option-btn" id="scriptsBtn">Scripts</button>
+  </div>
+
+  <!-- Scripts Modal -->
+  <div id="scriptsModal">
+    <div class="modal-content">
+      <button id="closeScriptsModal">&times;</button>
+      <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+        <button class="tab-btn" data-tab="garden">Grow A Garden</button>
+        <button class="tab-btn" data-tab="rivals">Rivals</button>
+        <button class="tab-btn" data-tab="mm2">mm2</button>
+      </div>
+      <div id="tabContent"></div>
+    </div>
+  </div>
 
   <script>
     // Replace with your actual values
     const CLIENT_ID = "1378901870940258464";
-    const REDIRECT_URI = "https://realmaybecool.github.io/falconwebiste/"; // Must match Discord app settings
+    const REDIRECT_URI = "https://realmaybecool.github.io/falconwebiste/";
     const OAUTH_SCOPE = "identify guilds";
 
     // Simulate backend API endpoint for demonstration
@@ -151,9 +261,10 @@
       // Replace this with a real fetch to your backend
       // Example: return fetch(`/api/discord/callback?code=${encodeURIComponent(code)}`).then(r => r.json());
       return {
-        username: "FalconUser",
-        avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
-        premium: Math.random() > 0.5 // Randomly premium or not for demo
+        username: "User",
+        avatar: "https://cdn.discordapp.com/avatars/USER_ID/AVATAR_HASH.png",
+        premium: true, // true if user has role 1378900467668488222
+        id: "USER_ID"
       };
     }
 
@@ -168,9 +279,7 @@
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
       if (code) {
-        // Hide main container while loading
         document.getElementById("mainContainer").style.display = "none";
-        // Simulate loading profile from backend
         try {
           const profile = await fetchProfile(code);
           showProfile(profile);
@@ -185,6 +294,7 @@
       const profileContainer = document.getElementById("profileContainer");
       const profileAvatar = document.getElementById("profileAvatar");
       const profileDropdown = document.getElementById("profileDropdown");
+      const options = document.getElementById("options");
 
       profileAvatar.src = profile.avatar;
       profileAvatar.alt = profile.username + " avatar";
@@ -196,6 +306,7 @@
       `;
       profileDropdown.className = "profile-dropdown " + (profile.premium ? "premium" : "not-premium");
       profileContainer.style.display = "flex";
+      options.style.display = "flex";
 
       // Dropdown toggle
       let dropdownVisible = false;
@@ -211,6 +322,84 @@
         }
       });
     }
+
+    // Executor and Scripts logic
+    document.getElementById("executorBtn").onclick = () => {
+      window.location.href = "https://your-executor-download-link.com";
+    };
+
+    // Scripts Modal Logic
+    const scriptsBtn = document.getElementById("scriptsBtn");
+    const scriptsModal = document.getElementById("scriptsModal");
+    const closeScriptsModal = document.getElementById("closeScriptsModal");
+    const tabContent = document.getElementById("tabContent");
+    const tabBtns = document.querySelectorAll(".tab-btn");
+
+    // Script links for each tab
+    const tabData = {
+      garden: [
+        {
+          label: "Grow A Garden Script",
+          url: "https://your-garden-script-link.com"
+        }
+      ],
+      rivals: [
+        {
+          label: "Rivals for PC",
+          url: "https://api.luarmor.net/files/v3/loaders/7b4027007fc7914a366c177ec0d309a2.lua"
+        },
+        {
+          label: "Rivals for Mobile",
+          url: "https://api.luarmor.net/files/v3/loaders/7b4027007fc7914a366c177ec0d309a2.lua"
+        }
+      ],
+      mm2: [
+        {
+          label: "MM2 Script",
+          url: "https://your-mm2-script-link.com"
+        }
+      ]
+    };
+
+    scriptsBtn.onclick = () => {
+      scriptsModal.style.display = "flex";
+      setActiveTab("garden");
+    };
+    closeScriptsModal.onclick = () => {
+      scriptsModal.style.display = "none";
+    };
+    tabBtns.forEach(btn => {
+      btn.onclick = () => setActiveTab(btn.getAttribute("data-tab"));
+    });
+
+    function setActiveTab(tab) {
+      tabBtns.forEach(btn => {
+        if (btn.getAttribute("data-tab") === tab) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+      // Render buttons for each script
+      tabContent.innerHTML = "";
+      (tabData[tab] || []).forEach(script => {
+        const btn = document.createElement("button");
+        btn.className = "script-link-btn";
+        btn.textContent = script.label;
+        btn.onclick = () => {
+          window.location.href = script.url;
+        };
+        tabContent.appendChild(btn);
+      });
+      if ((tabData[tab] || []).length === 0) {
+        tabContent.textContent = "No script available.";
+      }
+    }
+
+    // Optional: Close modal when clicking outside modal content
+    scriptsModal.addEventListener("click", (e) => {
+      if (e.target === scriptsModal) scriptsModal.style.display = "none";
+    });
   </script>
 </body>
 </html>
